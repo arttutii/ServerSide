@@ -1,6 +1,8 @@
 'use strict';
 let catArray = [];
+let categoryArray = [];
 let currentCat;
+let map;
 
 const getCats = () => {
     const  myRequest = new Request('./data.json');
@@ -14,36 +16,41 @@ const getCats = () => {
     });
 };
 
-const loadModal = (index) =>{
-
-    $('myModal').modal('show');
-    currentCat = catArray[index];
-
-    document.querySelector('#modalContent').innerHTML = `
+const modalContentTemplate = () => {
+    return `
         <!-- Modal content-->
         <div class="modal-content">
           <div class="modal-header" >
             <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title" style="text-align: center;" >${catArray[index].title} </h4>
+            <h4 class="modal-title">${currentCat.title} </h4>
           </div>
           <div class="modal-body">
-            <img style="max-width: 100%;" src="${catArray[index].image}">
-            <p>Date: ${catArray[index].time}</p>
-            <div id="map" style="width: 100%; height: 200px;"> </div>
+            <img src="${currentCat.image}">
+            <p>Date: ${currentCat.time}</p>
+            <div id="map"> </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
           </div>
         </div>
-        `;
-
-    setTimeout(() => {
-        initMap();
-    }, 500);
-
+        `
 };
 
-let map;
+const catCardTemplate = (index,title,details,category,thumbnail) => {
+    return `
+            <div class="card">
+                <img class="card-img-top" src="${thumbnail}" alt="Card image cap">
+                <p>${category}</p>
+                <div class="card-block">
+                    <h4 class="card-title">${title}</h4>
+                    <p class="card-text">${details}</p>
+                </div>
+                <a href="#" ><button type="button" class="btn btn-primary" id="btn${index}" data-target="#myModal" data-toggle="modal">View</button> </a>
+            </div>
+            `;
+};
+
+
 const initMap = () => {
     if(currentCat != null) {
         map = new google.maps.Map(document.getElementById('map'), {
@@ -60,13 +67,12 @@ const initMap = () => {
     }
 };
 
-let categoryArray = [];
 const getCategories = () => {
-    for (let i in catArray) {
+    for (const i in catArray) {
         if (categoryArray.length < 1) {
             categoryArray.push(catArray[i].category);
         }
-        for (let a in categoryArray) {
+        for (const a in categoryArray) {
             if (categoryArray[a] != catArray[i].category) {
                 categoryArray.push(catArray[i].category);
             }
@@ -74,29 +80,46 @@ const getCategories = () => {
     }
     document.querySelector('#categories').innerHTML += `<a href="#"><button type="button" class="btn btn-primary" onClick="populate('All')">All</button> </a>`;
 
-    for (let x in categoryArray){
-        document.querySelector('#categories').innerHTML += `<a href="#"><button type="button" class="btn btn-primary" onClick="populate('${categoryArray[x]}')">${categoryArray[x]}</button> </a>`
+    for (const x in categoryArray){
+        document.querySelector('#categories').innerHTML += `<a href="#"><button type="button" id="categoryBtn${x}" class="btn btn-primary">${categoryArray[x]}</button> </a>`;
+    }
+
+    // need to have a second loop because if this snip is included above, onClicks for the elements won't work
+    for (const x in categoryArray){
+        $('#categoryBtn'+ x).on('click', () => {
+            populate(categoryArray[x]);
+        });
     }
 };
 
 const populate = (t) => {
 
     document.querySelector('#cardList').innerHTML = '';
-    for (let i in catArray) {
+    for (const i in catArray) {
         if(catArray[i].category == t || t == 'All'){
-            document.querySelector('#cardList').innerHTML += `
-            <div class="card" style="max-width: 33%; text-align: center;">
-                <img style="max-width: 100%;" class="card-img-top" src="${catArray[i].thumbnail}" alt="Card image cap">
-                <p style="text-align: center;">${catArray[i].category}</p>
-                <div class="card-block">
-                    <h4 class="card-title">${catArray[i].title}</h4>
-                    <p class="card-text">${catArray[i].details}</p>
-                </div>
-                <a href="#" ><button type="button" class="btn btn-primary" data-target="#myModal" data-toggle="modal" onClick="loadModal(` + i + `)">View</button> </a>
-            </div>
-            `;
+            document.querySelector('#cardList').innerHTML += catCardTemplate(i, catArray[i].title, catArray[i].details, catArray[i].category, catArray[i].thumbnail);
+
         }
     }
+    // need to have a second loop because if this snip is included above, onclicks won't work
+    for (const i in catArray) {
+        $('#btn'+ i).on('click', () => {
+            loadModal(i);
+        });
+    }
+
+};
+
+const loadModal = (index) =>{
+
+    $('myModal').modal('show');
+    currentCat = catArray[index];
+
+    document.querySelector('#modalContent').innerHTML = modalContentTemplate();
+
+    setTimeout(() => {
+        initMap();
+    }, 500);
 
 };
 
