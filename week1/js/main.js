@@ -96,9 +96,6 @@ const populate = (t) => {
             </div>
             `;
         }
-        $('.card').on('mouseenter','img', () =>{
-            console.log("click");
-        });
     }
 
 };
